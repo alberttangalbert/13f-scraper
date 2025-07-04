@@ -23,7 +23,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from app.utils.download_utils import download_file, save_file, respect_rate_limit
+from app.utils.sec_edgar_download_utils import download_file, save_file, respect_rate_limit
 
 
 def download_master_files(start_year=1993, output_dir="output/master_files"):

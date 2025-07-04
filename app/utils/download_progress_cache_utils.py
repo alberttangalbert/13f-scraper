@@ -10,7 +10,7 @@ import logging
 import json
 import time
 from pathlib import Path
-from typing import Dict, Any, Set, Tuple
+from typing import Dict, Any, Set, Tuple, List
 
 
 def setup_file_logging(cache_dir: Path) -> logging.Logger:
@@ -282,7 +282,6 @@ def load_progress_cache(cache_dir: Path) -> Dict[str, Dict[str, Any]]:
             logging.getLogger(__name__).warning(f"Error loading progress cache: {e}")
     
     return {
-        'completed_ciks': [],
         'cik_adsh_counts': {},  # Track ADSH count per completed CIK
         'current_cik': '',
         'current_cik_progress': {
@@ -327,11 +326,8 @@ def update_cik_progress(cache_dir: Path, cik: str, completed_adshs: int,
     progress_data = load_progress_cache(cache_dir)
     
     if is_completed:
-        # Mark CIK as completed
-        if cik not in progress_data['completed_ciks']:
-            progress_data['completed_ciks'].append(cik)
-            # Store the total ADSH count for this completed CIK
-            progress_data['cik_adsh_counts'][cik] = total_adshs
+        # Mark CIK as completed by storing its ADSH count
+        progress_data['cik_adsh_counts'][cik] = total_adshs
         progress_data['current_cik'] = ''
         progress_data['current_cik_progress'] = {
             'completed_adshs': 0,
@@ -377,7 +373,7 @@ def get_resume_info(cache_dir: Path, cik_files: list) -> Tuple[str, int]:
         return current_cik, resume_index
     
     # Find first uncompleted CIK
-    completed_ciks = set(progress_data.get('completed_ciks', []))
+    completed_ciks = set(progress_data.get('cik_adsh_counts', {}).keys())
     cik_names = [cik_file.stem for cik_file in cik_files]
     
     for cik in cik_names:
@@ -402,7 +398,7 @@ def get_progress_summary(cache_dir: Path, total_cik_files: int = None) -> Dict[s
     progress_data = load_progress_cache(cache_dir)
     download_cache, _, _ = load_download_cache(cache_dir)
     
-    completed_ciks = progress_data.get('completed_ciks', [])
+    completed_ciks = list(progress_data.get('cik_adsh_counts', {}).keys())
     current_cik = progress_data.get('current_cik', '')
     current_progress = progress_data.get('current_cik_progress', {})
     total_completed_adshs = progress_data.get('total_completed_adshs', 0)
@@ -420,4 +416,89 @@ def get_progress_summary(cache_dir: Path, total_cik_files: int = None) -> Dict[s
     if total_cik_files:
         summary['cik_completion_rate'] = len(completed_ciks) / total_cik_files * 100
     
-    return summary 
+    return summary
+
+
+def get_failed_downloads_summary(cache_dir: Path) -> Dict[str, Any]:
+    """
+    Get a summary of failed downloads from the JSON file.
+    
+    Args:
+        cache_dir: Directory containing the cache files
+        
+    Returns:
+        Dict: Summary of failed downloads with statistics
+    """
+    logger = logging.getLogger(__name__)
+    
+    failed_file = cache_dir / "failed_downloads.json"
+    
+    if not failed_file.exists():
+        return {
+            'total_failed': 0,
+            'failed_by_cik': {},
+            'failed_by_error_type': {},
+            'recent_failures': []
+        }
+    
+    try:
+        with open(failed_file, 'r') as f:
+            json_data = json.load(f)
+            failed_downloads = json_data.get('failed_downloads', [])
+        
+        # Analyze failed downloads
+        failed_by_cik = {}
+        failed_by_error_type = {}
+        
+        for failure in failed_downloads:
+            # Count by CIK
+            cik = failure.get('cik', 'unknown')
+            failed_by_cik[cik] = failed_by_cik.get(cik, 0) + 1
+            
+            # Count by error type (simplified)
+            error_msg = failure.get('error_message', 'unknown')
+            error_type = 'HTTP Error' if 'HTTP error' in error_msg else 'Network Error' if 'Error downloading' in error_msg else 'Other'
+            failed_by_error_type[error_type] = failed_by_error_type.get(error_type, 0) + 1
+        
+        # Get recent failures (last 10)
+        recent_failures = sorted(failed_downloads, key=lambda x: x.get('timestamp', 0), reverse=True)[:10]
+        
+        return {
+            'total_failed': len(failed_downloads),
+            'failed_by_cik': failed_by_cik,
+            'failed_by_error_type': failed_by_error_type,
+            'recent_failures': recent_failures
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting failed downloads summary: {e}")
+        return {
+            'total_failed': 0,
+            'failed_by_cik': {},
+            'failed_by_error_type': {},
+            'recent_failures': []
+        }
+
+
+def clear_failed_downloads_cache(cache_dir: Path) -> bool:
+    """
+    Clear the failed downloads JSON file.
+    
+    Args:
+        cache_dir: Directory containing the cache files
+        
+    Returns:
+        bool: True if successfully cleared, False otherwise
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        failed_file = cache_dir / "failed_downloads.json"
+        if failed_file.exists():
+            failed_file.unlink()
+            logger.info("Cleared failed downloads JSON file")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error clearing failed downloads JSON file: {e}")
+        return False 

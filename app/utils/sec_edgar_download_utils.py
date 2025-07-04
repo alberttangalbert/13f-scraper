@@ -11,7 +11,7 @@ import requests
 import json
 import pandas as pd
 from pathlib import Path
-from typing import Optional, Dict, Any, Set, Tuple
+from typing import Optional, Dict, Any, Set, Tuple, List
 
 from app.config import SEC_HEADERS, DOWNLOAD_TIMEOUT, REQUEST_DELAY
 
@@ -106,6 +106,47 @@ def create_cik_directory(base_dir: Path, cik: str) -> Path:
     cik_dir = base_dir / str(cik).zfill(10)
     cik_dir.mkdir(parents=True, exist_ok=True)
     return cik_dir
+
+
+def save_failed_downloads_json(failed_downloads: List[Dict[str, Any]], cache_dir: Path) -> bool:
+    """
+    Save detailed failed downloads information to a JSON file.
+    
+    Args:
+        failed_downloads: List of dictionaries containing failed download information
+        cache_dir: Directory to save the failed downloads JSON
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        if not failed_downloads:
+            logger.info("No failed downloads to save")
+            return True
+        
+        # Create detailed JSON structure
+        failed_data = {
+            'summary': {
+                'total_failed': len(failed_downloads),
+                'timestamp': time.time(),
+                'date': time.strftime('%Y-%m-%d %H:%M:%S')
+            },
+            'failed_downloads': failed_downloads
+        }
+        
+        # Save to JSON
+        failed_json_path = cache_dir / "failed_downloads.json"
+        with open(failed_json_path, 'w') as f:
+            json.dump(failed_data, f, indent=2)
+        
+        logger.info(f"Saved detailed failed downloads to {failed_json_path}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error saving failed downloads JSON: {e}")
+        return False
 
 
 def verify_download_completion(adsh_files_dir: str, cache_dir: Path) -> Tuple[bool, int, int]:

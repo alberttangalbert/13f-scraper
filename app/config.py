@@ -14,4 +14,4 @@ SEC_HEADERS = {
 
 # Download settings
 DOWNLOAD_TIMEOUT = 30
-REQUEST_DELAY = 0.05  # Delay between requests to be respectful to SEC servers
+REQUEST_DELAY = 0.02  # Reduced from 0.05 to 0.02 (20ms between requests)
