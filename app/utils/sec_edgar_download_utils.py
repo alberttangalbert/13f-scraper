@@ -9,9 +9,8 @@ import logging
 import time
 import requests
 import json
-import pandas as pd
 from pathlib import Path
-from typing import Optional, Dict, Any, Tuple, List
+from typing import Optional, Dict, Any, List
 
 from app.config import SEC_HEADERS, DOWNLOAD_TIMEOUT, REQUEST_DELAY
 
@@ -134,63 +133,5 @@ def save_failed_downloads_json(failed_downloads: List[Dict[str, Any]], cache_dir
     except Exception as e:
         logger.error(f"Error saving failed downloads JSON: {e}")
         return False
-
-
-def verify_download_completion(adsh_files_dir: str, cache_dir: Path) -> Tuple[bool, int, int]:
-    """
-    Verify if all ADSHs from the all_13f_adshs files have been downloaded.
-    
-    This function compares the total number of ADSHs in all CIK files against
-    the number of downloaded filings in the cache to determine if the download
-    process is complete.
-    
-    Args:
-        adsh_files_dir: Directory containing CIK-specific ADSH files
-        cache_dir: Directory containing the download cache
-        
-    Returns:
-        tuple: (is_complete, total_adshs, downloaded_count) where:
-            - is_complete: True if all ADSHs have been downloaded
-            - total_adshs: Total number of ADSHs that should be downloaded
-            - downloaded_count: Number of ADSHs actually downloaded
-    """
-    logger = logging.getLogger(__name__)
-    
-    # Load cache to get downloaded count
-    cache_file = cache_dir / "download_cache.json"
-    downloaded_count = 0
-    
-    if cache_file.exists():
-        try:
-            with open(cache_file, 'r') as f:
-                cache_data = json.load(f)
-                downloaded_count = cache_data.get('total_count', 0)
-        except Exception as e:
-            logger.warning(f"Error reading cache file: {e}")
-    
-    # Count total ADSHs from all CIK files
-    adsh_path = Path(adsh_files_dir)
-    if not adsh_path.exists():
-        logger.error(f"ADSH files directory not found: {adsh_path}")
-        return False, 0, downloaded_count
-    
-    total_adshs = 0
-    cik_files = list(adsh_path.glob("*.csv"))
-    
-    for cik_file in cik_files:
-        try:
-            df = pd.read_csv(cik_file)
-            total_adshs += len(df)
-        except Exception as e:
-            logger.error(f"Error reading CIK file {cik_file}: {e}")
-            continue
-    
-    # Determine if download is complete
-    is_complete = downloaded_count >= total_adshs
-    
-    logger.info(f"Download verification: {downloaded_count}/{total_adshs} ADSHs downloaded")
-    
-    return is_complete, total_adshs, downloaded_count
-
 
  

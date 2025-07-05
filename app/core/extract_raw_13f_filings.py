@@ -15,7 +15,6 @@ This module handles:
 import logging
 from pathlib import Path
 
-from app.utils.sec_edgar_download_utils import verify_download_completion
 from app.utils.download_progress_cache_utils import setup_file_logging
 from app.utils.missing_adsh_downloader_utils import ensure_all_adshs_downloaded
 
@@ -79,22 +78,12 @@ def download_raw_13f_filings(adsh_files_dir: str = "output/13f_filings/all_13f_a
         logger.error(f"ADSH files directory not found: {adsh_path}")
         return False
     
-    # Ensure all ADSHs are downloaded before starting main extraction
-    logger.info("Checking for missing ADSHs before starting main extraction...")
+    # Ensure all ADSHs are downloaded
     if not ensure_all_adshs_downloaded(adsh_files_dir, output_dir, cache_dir):
-        logger.error("Failed to ensure all ADSHs are downloaded. Cannot proceed with main extraction.")
+        logger.error("Failed to ensure all ADSHs are downloaded.")
         return False
     
-    # Verify if download is already complete
-    is_complete, total_adshs, downloaded_count = verify_download_completion(adsh_files_dir, cache_dir)
-    
-    if is_complete:
-        logger.info(f"Download already complete: {downloaded_count}/{total_adshs} ADSHs downloaded")
-        return True
-    
-    # All ADSHs have been downloaded by ensure_all_adshs_downloaded()
-    # No need for additional CIK-by-CIK processing
-    logger.info("All ADSHs have been successfully downloaded. Extraction process complete.")
+    logger.info("Extraction complete.")
     return True 
 
 

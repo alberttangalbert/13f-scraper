@@ -124,7 +124,7 @@ def analyze_download_status(actual_data: Dict[str, List[Dict[str, str]]],
                 'status': 'not_downloaded',
                 'adsh_records': adsh_records
             })
-            logger.warning(f"CIK {cik}: Not downloaded at all ({total_adshs} ADSHs)")
+            logger.warning(f"CIK {cik}: Not downloaded ({total_adshs} ADSHs)")
             
         elif downloaded_count < total_adshs:
             # CIK partially downloaded
@@ -137,8 +137,7 @@ def analyze_download_status(actual_data: Dict[str, List[Dict[str, str]]],
                 'status': 'partially_downloaded',
                 'missing_records': missing_records
             })
-            logger.warning(f"CIK {cik}: {total_adshs - downloaded_count}/{total_adshs} ADSHs missing "
-                          f"({completion_percentage:.1f}% complete)")
+            logger.warning(f"CIK {cik}: {total_adshs - downloaded_count}/{total_adshs} missing ({completion_percentage:.1f}%)")
         else:
             # CIK completely downloaded
             complete_ciks.append({
@@ -149,7 +148,7 @@ def analyze_download_status(actual_data: Dict[str, List[Dict[str, str]]],
                 'completion_percentage': 100.0,
                 'status': 'complete'
             })
-            logger.info(f"CIK {cik}: Complete ({total_adshs} ADSHs)")
+            logger.info(f"CIK {cik}: Complete ({total_adshs})")
     
     return missing_downloads, not_downloaded_ciks, complete_ciks
 
@@ -192,7 +191,7 @@ def get_missing_adshs_for_download(missing_downloads: List[Dict],
                 'cache_key': f"{adsh_record['cik']}_{adsh_record['accession_number']}"
             })
     
-    logger.info(f"Total missing ADSHs identified: {len(all_adshs)}")
+
     return all_adshs
 
 
@@ -221,8 +220,7 @@ def filter_already_downloaded(adshs: List[Dict[str, str]], cache_dir: Path) -> L
             else:
                 filtered_adshs.append(adsh)
         
-        logger.info(f"Filtered out {already_downloaded} already downloaded ADSHs")
-        logger.info(f"Remaining ADSHs to download: {len(filtered_adshs)}")
+        logger.info(f"Filtered: {already_downloaded} already downloaded, {len(filtered_adshs)} remaining")
         
         return filtered_adshs
         
@@ -245,8 +243,6 @@ def check_download_progress(adsh_files_dir: str, cache_dir: Path) -> Tuple[List[
             - progress_summary: Summary statistics of download progress
     """
     logger = logging.getLogger(__name__)
-    
-    logger.info("Checking download progress...")
     
     # Get actual ADSH data from files
     actual_data = get_actual_adsh_data(adsh_files_dir)
@@ -287,13 +283,7 @@ def check_download_progress(adsh_files_dir: str, cache_dir: Path) -> Tuple[List[
         'missing_adshs_to_download': len(missing_adshs)
     }
     
-    logger.info(f"Progress summary:")
-    logger.info(f"  Complete CIKs: {len(complete_ciks)}")
-    logger.info(f"  Partially downloaded CIKs: {len(missing_downloads)}")
-    logger.info(f"  Not downloaded CIKs: {len(not_downloaded_ciks)}")
-    logger.info(f"  Total ADSHs: {total_adshs}")
-    logger.info(f"  Downloaded ADSHs: {total_downloaded}")
-    logger.info(f"  Overall completion: {progress_summary['overall_completion_percentage']:.1f}%")
-    logger.info(f"  Missing ADSHs to download: {len(missing_adshs)}")
+    logger.info(f"Progress: {len(complete_ciks)} complete, {len(missing_downloads)} partial, {len(not_downloaded_ciks)} not started")
+    logger.info(f"ADSHs: {total_downloaded}/{total_adshs} downloaded ({progress_summary['overall_completion_percentage']:.1f}%), {len(missing_adshs)} missing")
     
     return missing_adshs, progress_summary 
