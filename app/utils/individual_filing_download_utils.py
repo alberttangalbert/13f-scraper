@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import Dict, Any, Optional
 from app.utils.sec_edgar_download_utils import (
-    download_file, save_file, respect_rate_limit, save_failed_downloads_json
+    download_file, save_file, respect_rate_limit
 )
 
 

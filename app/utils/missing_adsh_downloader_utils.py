@@ -10,11 +10,8 @@ import time
 from pathlib import Path
 from typing import List, Dict
 from app.utils.individual_filing_download_utils import download_single_filing
-from app.utils.download_progress_cache_utils import (
-    load_download_cache, save_download_cache, get_filing_cache_key,
-    setup_file_logging, update_cik_progress
-)
-from app.utils.sec_edgar_download_utils import respect_rate_limit, save_failed_downloads_json
+from app.utils.download_progress_cache_utils import save_download_cache
+from app.utils.sec_edgar_download_utils import save_failed_downloads_json
 
 
 def download_missing_adshs(adshs: List[Dict[str, str]], output_dir: str, cache_dir: Path) -> Dict[str, int]:
@@ -33,10 +30,7 @@ def download_missing_adshs(adshs: List[Dict[str, str]], output_dir: str, cache_d
     
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
-    
-    # Set up file logging
-    file_logger = setup_file_logging(cache_dir)
-    
+
     # Initialize counters
     total_adshs = len(adshs)
     successful_downloads = 0

@@ -11,7 +11,7 @@ import requests
 import json
 import pandas as pd
 from pathlib import Path
-from typing import Optional, Dict, Any, Set, Tuple, List
+from typing import Optional, Dict, Any, Tuple, List
 
 from app.config import SEC_HEADERS, DOWNLOAD_TIMEOUT, REQUEST_DELAY
 
@@ -92,20 +92,7 @@ def save_file(content: str, file_path: Path, encoding: str = 'utf-8') -> bool:
         return False
 
 
-def create_cik_directory(base_dir: Path, cik: str) -> Path:
-    """
-    Create a CIK-specific directory.
-    
-    Args:
-        base_dir: Base directory
-        cik: CIK number
-        
-    Returns:
-        Path: Path to the created CIK directory
-    """
-    cik_dir = base_dir / str(cik).zfill(10)
-    cik_dir.mkdir(parents=True, exist_ok=True)
-    return cik_dir
+
 
 
 def save_failed_downloads_json(failed_downloads: List[Dict[str, Any]], cache_dir: Path) -> bool:

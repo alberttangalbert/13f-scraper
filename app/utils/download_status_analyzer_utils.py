@@ -7,11 +7,10 @@ to ensure all previous ADSHs have been downloaded.
 """
 
 import logging
-import json
 import pandas as pd
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
-from app.utils.download_progress_cache_utils import load_progress_cache, load_download_cache
+from app.utils.download_progress_cache_utils import load_download_cache
 
 
 def get_actual_adsh_data(adsh_files_dir: str) -> Dict[str, List[Dict[str, str]]]:
